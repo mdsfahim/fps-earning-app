@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EarnFast - Play & Win</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+
+    <!-- TELEGRAM WEB APP SCRIPT -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- MONETAG SCRIPT (REAL SDK) -->
+    <script src='//.com/sdk.js' data-zone='10499975' data-sdk='show_10499975'></script>
+
+    <style>
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background-color: #0f172a; 
+            color: #fff; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Payment Slider Animation */
+        .payment-slider-container {
+            height: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+        .payment-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-in-out;
+        }
+        .payment-slide.active { opacity: 1; transform: translateY(0); }
+        .payment-slide.exit { opacity: 0; transform: translateY(-20px); }
+
+        /* Animations */
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        .page-transition { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Game Grid */
+        .game-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .game-cell { 
+            aspect-ratio: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.8rem; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255,255,255,0.05);
+        }
+        .game-cell:active { transform: scale(0.9); }
+        
+        /* Tic Tac Toe Grid */
+        .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px; margin: 0 auto; }
+        .ttt-cell { aspect-ratio: 1; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; cursor: pointer; }
+        .ttt-cell.x { color: #34d399; }
+        .ttt-cell.o { color: #f87171; }
+
+        /* Active User Badge Pulse */
+        .pulse-dot {
+            width: 8px; height: 8px; background-color: #4ade80; border-radius: 50%; display: inline-block;
+            box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col">
+
+    <!-- Success Sound -->
+    <audio id="success-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-successful-payment-making-notification-2329.mp3" preload="auto"></audio>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <!-- LOADING SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-[#0f172a] flex flex-col items-center justify-center p-6 text-center">
+        <div class="relative w-32 h-32 mb-8">
+            <div class="absolute inset-0 bg-indigo-500 rounded-full opacity-20 animate-pulse"></div>
+            <div class="absolute inset-2 bg-gradient-to-tr from-indigo-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/50 animate-float">
+                <i class="fas fa-bolt text-5xl text-white"></i>
+            </div>
+        </div>
+        
+        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-300 mb-2">EarnFast</h1>
+        <p class="text-slate-400 mb-8 text-sm">Loading your profile...</p>
+        
+        <div id="loading-spinner" class="flex flex-col items-center">
+            <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-xs text-slate-500" id="loading-text">Connecting...</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div id="main-app" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center p-4 pt-6 bg-gradient-to-b from-slate-900 via-slate-900 to-transparent z-20">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-[2px]">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=random" class="w-full h-full rounded-full object-cover border-2 border-[#0f172a]">
+                </div>
+                <div>
+                    <h2 class="font-bold text-sm leading-tight text-white" id="user-name">Guest</h2>
+                    <span class="text-[10px] text-slate-400">Welcome back!</span>
+                </div>
+            </div>
+            
+            <!-- Right: Coin Balance + Active Users -->
+            <div class="flex flex-col items-end gap-1">
+                <div class="glass-card px-3 py-1 rounded-full flex items-center gap-2 border border-yellow-500/30 bg-yellow-500/10">
+                    <i class="fas fa-coins text-yellow-400 text-xs"></i>
+                    <span class="font-bold text-white text-xs" id="header-balance">0</span>
+                </div>
+                <!-- Real-Time Active Users Badge -->
+                <div class="flex items-center gap-1.5 bg-black/20 px-2 py-0.5 rounded-full border border-white/5">
+                    <div class="pulse-dot"></div>
+                    <span class="text-[9px] text-slate-300 font-mono"><span id="active-users-count">...</span> Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main id="content-area" class="flex-1 overflow-y-auto custom-scroll p-4 pb-28 relative">
+            
+            <!-- HOME PAGE -->
+            <div id="home-page" class="page-section page-transition">
+                
+                <!-- FAKE PAYMENT SLIDER -->
+                <div class="glass-card rounded-xl mb-6 border border-yellow-500/10 bg-yellow-500/5 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#0f172a] to-transparent z-10"></div>
+                    <div class="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#0f172a] to-transparent z-10"></div>
+                    
+                    <div class="payment-slider-container flex items-center justify-center" id="payment-slider">
+                        <!-- Dynamic slides -->
+                        <div class="payment-slide active">
+                            <div class="flex items-center gap-2">
+                                <img src="https://ui-avatars.com/api/?name=R&background=random" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-slate-300">Rahul withdrew <span class="text-green-400 font-bold">₹20</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Section -->
+                <div onclick="startImageFinderGame()" class="relative w-full h-52 rounded-3xl overflow-hidden mb-8 cursor-pointer shadow-xl shadow-indigo-900/30 group border border-white/5">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 transition duration-500 group-hover:scale-105"></div>
+                    <div class="absolute inset-0 p-6 flex flex-col justify-center items-start z-10">
+                        <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded mb-2 border border-white/10 flex items-center gap-1"><i class="fas fa-fire text-orange-400"></i> POPULAR</span>
+                        <h2 class="text-3xl font-extrabold text-white leading-tight mb-1">Image<br>Finder</h2>
+                        <p class="text-indigo-100 text-xs mb-5 opacity-90 font-medium">Identify 3 icons correctly to win!</p>
+                        <button class="bg-white text-indigo-600 text-xs font-bold px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 group-active:scale-95 transition hover:bg-indigo-50">
+                            <i class="fas fa-play"></i> PLAY NOW
+                        </button>
+                    </div>
+                    <div class="absolute right-4 bottom-4">
+                        <i class="fas fa-search text-7xl text-white opacity-10 rotate-12 absolute top-0 right-0"></i>
+                        <i class="fas fa-gamepad text-5xl text-yellow-300 absolute bottom-2 right-2 animate-bounce drop-shadow-lg"></i>
+                    </div>
+                </div>
+
+                <!-- More Games -->
+                <div class="flex justify-between items-end mb-4 px-1">
+                    <h3 class="font-bold text-lg text-white flex items-center gap-2"><i class="fas fa-shapes text-pink-400"></i> More Games</h3>
+                </div>
+                <div id="games-list" class="space-y-3">
+                    <div class="glass-card p-3 rounded-xl flex items-center gap-4 cursor-pointer active:scale-95 transition group hover:border-green-500/50" onclick="startTicTacToe()">
+                        <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center text-2xl font-bold">❌</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm text-white group-hover:text-green-400 transition">Tic Tac Toe</h4>
+                            <p class="text-[10px] text-slate-400">Beat AI & Win Rewards</p>
+                        </div>
+                        <button class="bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center group-hover:bg-green-600 transition shadow-lg"><i class="fas fa-play text-xs text-white"></i></button>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl flex items-center gap-4 cursor-pointer active:scale-95 transition group hover:border-pink-500/50" onclick="startMathGame()">
+                        <div class="w-14 h-14 bg-gradient-to-br from-pink-500 to-red-600 rounded-xl flex items-center justify-center text-2xl font-bold">➗</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm text-white group-hover:text-pink-400 transition">Math Solve</h4>
+                            <p class="text-[10px] text-slate-400">Solve & Win Rewards</p>
+                        </div>
+                        <button class="bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center group-hover:bg-pink-600 transition shadow-lg"><i class="fas fa-play text-xs text-white"></i></button>
+                    </div>
+                </div>
+
+                <!-- SOCIAL LINKS SECTION -->
+                <div id="social-container" class="mt-6 mb-4 hidden">
+                    <h3 class="font-bold text-sm text-white mb-3 px-1 flex items-center gap-2"><i class="fas fa-users text-blue-400"></i> Join Community</h3>
+                    <div id="social-icons" class="flex justify-center gap-4 glass-card p-4 rounded-xl">
+                        <!-- Icons injected here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- PROFILE PAGE -->
+            <div id="profile-page" class="page-section page-transition hidden">
+                <h2 class="text-xl font-bold mb-6 px-1">My Profile</h2>
+                <div class="glass-card rounded-2xl p-6 text-center mb-6 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent"></div>
+                    <div class="relative z-10">
+                        <div class="w-20 h-20 mx-auto rounded-full p-1 bg-gradient-to-tr from-indigo-500 to-purple-500 mb-3 shadow-lg">
+                            <img id="profile-avatar" src="" class="w-full h-full rounded-full object-cover bg-slate-900">
+                        </div>
+                        <h3 class="text-xl font-bold text-white" id="profile-name">User</h3>
+                        <p class="text-slate-400 text-xs">Member since 2024</p>
+                        <div class="mt-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-widest mb-1">Total Lifetime Earnings</p>
+                            <p class="text-2xl font-bold text-green-400 flex justify-center items-center gap-2">
+                                <i class="fas fa-chart-line"></i> <span id="profile-total-earned">0</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-bold text-md text-white mb-3 px-1">Earning History</h3>
+                <div id="earning-history" class="space-y-2 pb-10">
+                    <div class="text-center py-6 text-slate-500 text-xs bg-slate-800/30 rounded-xl border border-dashed border-slate-700">No earnings yet.</div>
+                </div>
+            </div>
+
+            <!-- WALLET PAGE -->
+            <div id="wallet-page" class="page-section page-transition hidden">
+                <h2 class="text-xl font-bold mb-4 px-1">Wallet</h2>
+                <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 mb-6 text-center border border-slate-700 shadow-xl relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500 opacity-10 rounded-full blur-xl"></div>
+                    <p class="text-slate-400 text-xs mb-1 uppercase tracking-widest">Current Balance</p>
+                    <h1 class="text-5xl font-extrabold text-white mb-3 flex justify-center items-center gap-2 tracking-tight">
+                        <span id="wallet-balance">0</span> <span class="text-2xl text-yellow-500"><i class="fas fa-coins"></i></span>
+                    </h1>
+                    <div class="inline-block bg-slate-800/80 backdrop-blur border border-white/10 px-4 py-1.5 rounded-full text-xs text-slate-300">
+                        Rate: 100 Coins = <span id="val-disp" class="text-green-400 font-bold">₹1</span>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 mb-8">
+                    <h3 class="font-bold text-sm text-indigo-400 mb-4 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-university"></i> Withdraw Money</h3>
+                    <form onsubmit="handleWithdraw(event)" class="space-y-4">
+                        <div>
+                            <div class="relative">
+                                <select id="withdraw-method" onchange="updatePlaceholder()" class="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3.5 text-sm text-white appearance-none outline-none focus:border-indigo-500 transition"></select>
+                                <i class="fas fa-chevron-down absolute right-3 top-4 text-slate-500 text-xs"></i>
+                            </div>
+                        </div>
+                        <input type="text" id="withdraw-details" required placeholder="Select Method First" class="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3.5 text-sm text-white outline-none focus:border-indigo-500 transition placeholder-slate-600">
+                        <input type="number" id="withdraw-amount" required placeholder="Amount (Min 100 Coins)" class="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3.5 text-sm text-white outline-none focus:border-indigo-500 transition placeholder-slate-600">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 transition">Redeem Now</button>
+                    </form>
+                </div>
+                <h3 class="font-bold text-md text-white mb-3 px-1">Withdrawal History</h3>
+                <div id="tx-history" class="space-y-2 pb-10"></div>
+            </div>
+
+            <!-- REFER PAGE -->
+            <div id="refer-page" class="page-section page-transition hidden">
+                <div class="flex flex-col items-center text-center mt-2">
+                    <div class="w-24 h-24 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-900/30 rotate-3 border-4 border-[#0f172a]">
+                        <i class="fas fa-gift text-4xl text-white"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-white mb-2">Invite & Earn</h2>
+                    <p class="text-slate-400 text-sm px-6 mb-6">Earn <span class="text-yellow-400 font-bold" id="refer-bonus-disp">500</span> coins per friend!</p>
+                    
+                    <div class="bg-slate-800/50 rounded-xl p-3 mb-6 border border-slate-700 w-full max-w-[200px]">
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest">Total Referrals</p>
+                        <p class="text-2xl font-bold text-white" id="total-refers-display">0</p>
+                    </div>
+
+                    <div class="w-full glass-card p-5 rounded-xl border border-dashed border-slate-600 mb-6 relative overflow-hidden group">
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-2">Your Invite Code</p>
+                        <div class="flex items-center justify-center gap-4 bg-black/20 p-2 rounded-lg">
+                            <span id="my-ref-code" class="text-2xl font-mono font-bold text-white tracking-widest select-all">...</span>
+                            <button onclick="copyRefCode()" class="w-8 h-8 bg-slate-700 hover:bg-white hover:text-black rounded-full flex items-center justify-center transition"><i class="fas fa-copy text-xs"></i></button>
+                        </div>
+                    </div>
+
+                    <button onclick="shareOnTelegram()" class="w-full bg-[#229ED9] hover:bg-[#1e8ubc] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg mb-6 active:scale-95 transition">
+                        <i class="fab fa-telegram-plane"></i> Share on Telegram
+                    </button>
+                    
+                    <!-- Manual Code Input -->
+                    <div class="w-full glass-card p-4 rounded-xl text-left">
+                        <p class="text-xs text-slate-400 mb-2 font-bold uppercase">Enter Referral Code Manually</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="manual-ref-input" placeholder="CODE" class="bg-[#0f172a] flex-1 rounded-lg p-3 text-sm text-white border border-slate-700 outline-none uppercase font-mono focus:border-indigo-500 transition">
+                            <button onclick="redeemManualReferral()" class="bg-green-600 text-white px-5 rounded-lg font-bold text-sm active:scale-95 transition shadow-lg shadow-green-900/20">APPLY</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="glass-nav fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-40 h-[75px]">
+            <button onclick="showPage('home-page')" class="nav-item active flex flex-col items-center gap-1 w-14 text-slate-500 transition duration-300" id="nav-home">
+                <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-transparent transition-all duration-300"><i class="fas fa-home text-lg"></i></div><span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button onclick="showPage('refer-page')" class="nav-item flex flex-col items-center gap-1 w-14 text-slate-500 transition duration-300" id="nav-refer">
+                <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-transparent transition-all duration-300"><i class="fas fa-users text-lg"></i></div><span class="text-[10px] font-medium">Refer</span>
+            </button>
+            <div class="relative -top-6">
+                <button onclick="startImageFinderGame()" class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/40 border-4 border-[#0f172a] active:scale-90 transition group"><i class="fas fa-gamepad text-white text-2xl group-hover:animate-pulse"></i></button>
+            </div>
+            <button onclick="showPage('wallet-page')" class="nav-item flex flex-col items-center gap-1 w-14 text-slate-500 transition duration-300" id="nav-wallet">
+                <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-transparent transition-all duration-300"><i class="fas fa-wallet text-lg"></i></div><span class="text-[10px] font-medium">Wallet</span>
+            </button>
+            <button onclick="showPage('profile-page')" class="nav-item flex flex-col items-center gap-1 w-14 text-slate-500 transition duration-300" id="nav-profile">
+                <div class="w-6 h-6 flex items-center justify-center rounded-lg bg-transparent transition-all duration-300"><i class="fas fa-user text-lg"></i></div><span class="text-[10px] font-medium">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Payment Success Modal -->
+    <div id="payment-success-modal" class="fixed inset-0 z-[200] bg-black/90 hidden flex-col items-center justify-center p-6 text-center backdrop-blur-md">
+        <div class="bg-slate-800 p-8 rounded-3xl border border-green-500/30 shadow-2xl flex flex-col items-center max-w-sm w-full relative overflow-hidden transform transition-all scale-100">
+            <div class="absolute inset-0 bg-green-500/5"></div>
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/40 animate-bounce">
+                <i class="fas fa-check text-4xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white mb-2">Success!</h2>
+            <p class="text-slate-300 text-sm mb-6">Payment request submitted successfully.</p>
+            
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 w-full mb-6">
+                <p class="text-xs text-slate-400 mb-1 uppercase font-bold tracking-widest">Estimated Arrival</p>
+                <p class="text-yellow-400 font-bold text-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-clock"></i> 24 - 48 Hours
+                </p>
+            </div>
+            
+            <!-- CHANGED: Red Close Button with explicit onclick and button type -->
+            <button type="button" onclick="closeSuccessModal()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Modals (Game, TTT, Math, Ad, Claim) -->
+    <div id="game-modal" class="fixed inset-0 z-50 bg-[#0f172a] hidden flex-col">
+        <div class="flex justify-between items-center p-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg z-10">
+            <button onclick="closeGame()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+            <div class="flex flex-col items-center"><span class="text-[9px] text-white/70 uppercase font-bold tracking-wider">STREAK</span><span class="font-extrabold text-white text-lg leading-none drop-shadow-md"><span id="win-streak">0</span>/3</span></div>
+            <div class="bg-black/30 border border-white/20 px-3 py-1 rounded-full text-sm font-mono font-bold text-white flex items-center gap-2" id="game-timer">00:30</div>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#1e1b4b]">
+            <div class="text-center mb-8 relative z-10">
+                <p class="text-indigo-200 text-sm mb-3 font-bold uppercase tracking-wide">Find this icon</p>
+                <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center border-4 border-[#0f172a] shadow-2xl shadow-indigo-500/30 mx-auto animate-bounce"><i id="target-icon" class="fas fa-question text-5xl text-white drop-shadow-lg"></i></div>
+            </div>
+            <div id="game-grid" class="game-grid w-full max-w-sm relative z-10"></div>
+            <p id="game-msg" class="absolute bottom-20 text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 opacity-0 transition transform scale-50">Excellent!</p>
+        </div>
+    </div>
+
+    <div id="ttt-modal" class="fixed inset-0 z-50 bg-[#0f172a] hidden flex-col items-center justify-center">
+        <div class="w-full max-w-sm p-6">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Tic Tac Toe</h2><button onclick="closeTicTacToe()" class="text-white bg-slate-700 w-8 h-8 rounded-full"><i class="fas fa-times"></i></button></div>
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-center mb-4"><p class="text-slate-300 text-sm">Beat Smart AI = <span class="text-yellow-400 font-bold">Win Coins</span></p></div>
+            <div id="ttt-board" class="ttt-grid"></div><p id="ttt-status" class="text-center mt-6 text-lg font-bold text-white">Your Turn (X)</p>
+        </div>
+    </div>
+
+    <div id="math-modal" class="fixed inset-0 z-50 bg-[#0f172a] hidden flex-col items-center justify-center">
+        <div class="w-full max-w-sm p-6">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-white">Math Solve</h2><button onclick="closeMathGame()" class="text-white bg-slate-700 w-8 h-8 rounded-full"><i class="fas fa-times"></i></button></div>
+            <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center mb-6"><p class="text-4xl font-bold text-white mb-2" id="math-question">?</p><p class="text-slate-400 text-xs">Select correct answer</p></div>
+            <div id="math-options" class="grid grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
+    <div id="ad-click-req-modal" class="fixed inset-0 z-[80] bg-black/95 hidden flex-col items-center justify-center p-6 text-center backdrop-blur-xl">
+        <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mb-4 animate-bounce shadow-lg shadow-blue-500/50"><i class="fas fa-mouse-pointer text-4xl text-white"></i></div>
+        <h2 class="text-2xl font-bold text-white mb-2">Click Ad Claim Coin</h2>
+        <p class="text-slate-300 text-sm mb-6 max-w-xs font-bold text-yellow-300">Ads par click kare tabhi cion cleme hoga</p>
+        <button onclick="handleAdClickLink()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-full shadow-lg shadow-blue-500/40 active:scale-95 transition w-full max-w-xs flex items-center justify-center gap-3">
+            <span class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">AD</span> WATCH AD
+        </button>
+        <p class="text-xs text-slate-500 mt-4 max-w-[200px]">Ad par click karke browser open karein, fir back aayein.</p>
+    </div>
+
+    <div id="claim-overlay" class="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm hidden flex flex-col items-center justify-center p-8 text-center">
+        <div class="mb-6 text-7xl animate-float">🎁</div>
+        <h2 class="text-3xl font-bold text-white mb-2">You Won!</h2>
+        <p class="text-slate-300 mb-8 text-lg">Watch Ads to Claim Reward</p>
+        <button onclick="startAdSequence()" class="w-full max-w-xs bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-orange-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+            <i class="fas fa-play-circle"></i> CLAIM REWARD
+        </button>
+    </div>
+
+    <script>
+        // Updated Firebase Configuration for Earnjab
+        const firebaseConfig = {
+          apiKey: "apna",
+          authDomain: "apna",
+          databaseURL: "apna",
+          projectId: "apna",
+          storageBucket: "apna",
+          messagingSenderId: "apna",
+          appId: "apna"
+        };
+        // Updated appId to match the new projectId for path consistency
+        const appId = "apna";
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const rtdb = firebase.database();
+
+        let currentUser = null, userData = null, tgUser = null;
+        let gamesPlayedSession = 0, pendingRewardAmount = 0, pendingRewardSrc = "";
+        
+        let isWaitingForAdClick = false;
+        let adClickStartTime = 0;
+
+        const SETTINGS = { 
+            gameReward: 10, 
+            referBonus: 500, 
+            signupBonus: 100, 
+            coinValue: "₹1", 
+            paymentMethods: ['Paytm', 'UPI', 'Google Pay'],
+            tttReward: 10,
+            mathReward: 10,
+            minWithdraw: 100 // Added Default
+        };
+
+        function setupPresenceSystem(uid) {
+            const userStatusRef = rtdb.ref('/status/' + uid);
+            const activeCountRef = rtdb.ref('/status'); 
+            const isOnline = { state: 'online', last_changed: firebase.database.ServerValue.TIMESTAMP };
+            rtdb.ref('.info/connected').on('value', (snapshot) => {
+                if (snapshot.val() === false) return;
+                userStatusRef.onDisconnect().remove().then(() => { userStatusRef.set(isOnline); });
+            });
+            activeCountRef.on('value', (snapshot) => {
+                const count = snapshot.numChildren();
+                const el = document.getElementById('active-users-count');
+                if(el) el.innerText = count.toLocaleString();
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            startFakePaymentSlider();
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === 'visible' && isWaitingForAdClick) {
+                    const timeSpentAway = Date.now() - adClickStartTime;
+                    if (timeSpentAway > 2000) { 
+                        isWaitingForAdClick = false;
+                        const m = document.getElementById('ad-click-req-modal');
+                        m.classList.add('hidden'); m.classList.remove('flex');
+                        showToast("Verification Success!", "success");
+                        saveGameEarnings(pendingRewardAmount, "Ad Click Bonus");
+                    } else {
+                        showToast("Please click the ad correctly!", "error");
+                        isWaitingForAdClick = false; 
+                    }
+                }
+            });
+
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready(); tg.expand();
+                const initDataUnsafe = tg.initDataUnsafe || {};
+                if(initDataUnsafe.start_param) sessionStorage.setItem('refCode', initDataUnsafe.start_param);
+                if (initDataUnsafe.user) { tgUser = initDataUnsafe.user; handleTelegramAuth(tgUser); } 
+                else fallbackAuth();
+            } else {
+                const urlParams = new URLSearchParams(window.location.search);
+                const ref = urlParams.get('startapp') || urlParams.get('ref');
+                if(ref) sessionStorage.setItem('refCode', ref);
+                fallbackAuth();
+            }
+        });
+
+        function startFakePaymentSlider() {
+            const names = ["Rahul", "Priya", "Amit", "Sneha", "Vikram", "Anjali", "Rohit", "Kavita", "Arjun", "Neha"];
+            const amounts = [10, 20, 50, 100, 150];
+            const slider = document.getElementById('payment-slider');
+            setInterval(() => {
+                const oldSlide = slider.querySelector('.active');
+                if(oldSlide) { oldSlide.classList.remove('active'); oldSlide.classList.add('exit'); setTimeout(() => oldSlide.remove(), 500); }
+                const rName = names[Math.floor(Math.random() * names.length)];
+                const rAmt = amounts[Math.floor(Math.random() * amounts.length)];
+                const div = document.createElement('div');
+                div.className = 'payment-slide';
+                div.innerHTML = `<div class="flex items-center gap-2"><img src="https://ui-avatars.com/api/?name=${rName}&background=random" class="w-6 h-6 rounded-full"><span class="text-xs text-slate-300">${rName} withdrew <span class="text-green-400 font-bold">₹${rAmt}</span></span></div>`;
+                slider.appendChild(div);
+                setTimeout(() => div.classList.add('active'), 50);
+            }, 3500);
+        }
+
+        async function handleTelegramAuth(tUser) {
+            const email = `tg_${tUser.id}@earnfast.app`;
+            const password = `secret_pass_${tUser.id}`;
+            try { await auth.signInWithEmailAndPassword(email, password); } 
+            catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    try { await auth.createUserWithEmailAndPassword(email, password); } catch (e) { fallbackAuth(); }
+                } else fallbackAuth();
+            }
+        }
+        async function fallbackAuth() { try { await auth.signInAnonymously(); } catch (e) { console.error(e); } }
+        
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                if (tgUser) {
+                    document.getElementById('user-name').innerText = tgUser.first_name;
+                    document.getElementById('profile-name').innerText = tgUser.first_name;
+                    if(tgUser.photo_url) {
+                         document.getElementById('user-avatar').src = tgUser.photo_url;
+                         document.getElementById('profile-avatar').src = tgUser.photo_url;
+                    }
+                }
+                setupPresenceSystem(user.uid);
+                await initUserData(user.uid);
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                loadSettings();
+                const savedRef = sessionStorage.getItem('refCode');
+                if(savedRef) setTimeout(() => processReferral(savedRef), 1500);
+            }
+        });
+
+        async function initUserData(uid) {
+            const ref = db.collection(`artifacts/${appId}/users/${uid}/profile`).doc('main');
+            try {
+                const doc = await ref.get();
+                if (!doc.exists) {
+                    const code = 'FAST' + Math.floor(10000 + Math.random() * 90000);
+                    const initialData = {
+                        uid: uid,
+                        telegramId: tgUser ? tgUser.id : 'anon',
+                        firstName: tgUser ? tgUser.first_name : 'Guest',
+                        balance: 0,
+                        referralCode: code,
+                        totalEarned: 0,
+                        totalRefers: 0,
+                        referredBy: null,
+                        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    await ref.set(initialData);
+                    try { await db.collection(`artifacts/${appId}/public/data/referralCodes`).doc(code).set({ userId: uid }); } catch(e) {}
+                    userData = initialData;
+                } else {
+                    userData = doc.data();
+                }
+                try { if(userData && userData.referralCode) { await db.collection(`artifacts/${appId}/public/data/referralCodes`).doc(userData.referralCode).set({ userId: uid }, { merge: true }); } } catch(e) {}
+                updateHeader();
+                ref.onSnapshot(snapshot => { if (snapshot.exists) { userData = snapshot.data(); updateHeader(); } });
+            } catch(e) { userData = { balance: 0, referralCode: 'ERR' }; updateHeader(); }
+        }
+
+        async function processReferral(code) {
+            if(!code) return; code = code.trim().toUpperCase();
+            if(userData.referredBy || code === userData.referralCode) return;
+            try {
+                const refCodeDoc = await db.collection(`artifacts/${appId}/public/data/referralCodes`).doc(code).get();
+                if(!refCodeDoc.exists) { showToast("Invalid Referral Code", "error"); return; }
+                const userRef = db.collection(`artifacts/${appId}/users/${currentUser.uid}/profile`).doc('main');
+                await userRef.update({
+                    balance: firebase.firestore.FieldValue.increment(SETTINGS.signupBonus),
+                    totalEarned: firebase.firestore.FieldValue.increment(SETTINGS.signupBonus),
+                    referredBy: code
+                });
+                showToast(`Bonus: +${SETTINGS.signupBonus} Coins!`, "success");
+                const referrerId = refCodeDoc.data().userId;
+                const referrerRef = db.collection(`artifacts/${appId}/users/${referrerId}/profile`).doc('main');
+                try {
+                    await referrerRef.update({
+                        balance: firebase.firestore.FieldValue.increment(SETTINGS.referBonus),
+                        totalEarned: firebase.firestore.FieldValue.increment(SETTINGS.referBonus),
+                        totalRefers: firebase.firestore.FieldValue.increment(1)
+                    });
+                    db.collection(`artifacts/${appId}/users/${referrerId}/earnings`).add({ amount: SETTINGS.referBonus, source: `Referral: ${userData.firstName}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                } catch(err) { console.warn("Referrer update failed", err); }
+                sessionStorage.removeItem('refCode');
+            } catch(e) { console.log("Referral Error", e); }
+        }
+
+        function redeemManualReferral() {
+            const code = document.getElementById('manual-ref-input').value;
+            if(!code) return showToast("Enter a code", "error");
+            processReferral(code);
+        }
+
+        function shareOnTelegram() {
+            const botLink = `https://t.me/Earnfast11_bot?startapp=${userData.referralCode}`;
+            const text = `Join EarnFast & get ${SETTINGS.signupBonus} Coins Bonus! 🚀\nPlay Games & Earn Money.\n\n👇 Click here:\n${botLink}`;
+            const url = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function processGameWin(source) {
+            let amount = SETTINGS.gameReward;
+            if (source.includes("Tic Tac Toe") && SETTINGS.tttReward) amount = SETTINGS.tttReward;
+            if (source.includes("Math") && SETTINGS.mathReward) amount = SETTINGS.mathReward;
+
+            gamesPlayedSession++; 
+            pendingRewardAmount = amount; 
+            pendingRewardSrc = source;
+            
+            if (gamesPlayedSession % 5 === 0) {
+                showAdClickRequirement();
+            } else {
+                showClaimOverlay(source);
+            }
+        }
+
+        function showAdClickRequirement() {
+            const m = document.getElementById('ad-click-req-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+        }
+
+        function handleAdClickLink() {
+            isWaitingForAdClick = true;
+            adClickStartTime = Date.now();
+            
+            if (typeof show_10499975 === 'function') {
+                show_10499975().then(() => {
+                    if (isWaitingForAdClick) {
+                        isWaitingForAdClick = false;
+                        showToast("You must CLICK the ad to claim!", "error");
+                    }
+                }).catch(e => {
+                    console.error("Ad Error", e);
+                    showToast("Ad Failed. Try again.", "error");
+                    isWaitingForAdClick = false;
+                });
+            } else {
+                showToast("Ad Not Ready", "error");
+                isWaitingForAdClick = false;
+            }
+        }
+
+        function showClaimOverlay(source) {
+            pendingRewardSrc = source;
+            document.getElementById('claim-overlay').classList.remove('hidden');
+            document.getElementById('claim-overlay').classList.add('flex');
+        }
+
+        function startAdSequence() {
+            document.getElementById('claim-overlay').classList.add('hidden');
+            document.getElementById('claim-overlay').classList.remove('flex');
+            showToast("Loading Ad...", "info");
+            
+            if (typeof show_10499975 === 'function') {
+                show_10499975().then(() => {
+                    saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
+                }).catch(e => {
+                    console.error('Monetag error', e);
+                    saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
+                });
+            } else {
+                console.warn("Monetag SDK not ready");
+                saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
+            }
+        }
+
+        async function saveGameEarnings(amount, source) {
+            if (!currentUser) return;
+            if(userData) { 
+                userData.balance = (userData.balance || 0) + amount; 
+                userData.totalEarned = (userData.totalEarned || 0) + amount; 
+                updateHeader(); 
+            }
+            const ref = db.collection(`artifacts/${appId}/users/${currentUser.uid}/profile`).doc('main');
+            const earnRef = db.collection(`artifacts/${appId}/users/${currentUser.uid}/earnings`);
+            try {
+                await db.runTransaction(async (t) => {
+                    const doc = await t.get(ref);
+                    const newBal = (doc.data().balance || 0) + amount;
+                    const newTotal = (doc.data().totalEarned || 0) + amount;
+                    t.update(ref, { balance: newBal, totalEarned: newTotal });
+                });
+                await earnRef.add({ amount: amount, source: source || 'Game Win', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                showToast(`+${amount} Coins Added!`, "success");
+            } catch (e) { 
+                if(userData) { 
+                    userData.balance -= amount; 
+                    userData.totalEarned -= amount; 
+                    updateHeader(); 
+                }
+                showToast("Network Error", "error");
+            }
+        }
+
+        function loadSettings() {
+            db.collection(`artifacts/${appId}/public/data/settings`).doc('global')
+              .onSnapshot((doc) => {
+                if (doc.exists) {
+                    const d = doc.data();
+                    if(d.coinValue) SETTINGS.coinValue = d.coinValue;
+                    if(d.paymentMethods) SETTINGS.paymentMethods = d.paymentMethods;
+                    if(d.gameReward) SETTINGS.gameReward = d.gameReward;
+                    if(d.tttReward) SETTINGS.tttReward = d.tttReward;
+                    if(d.mathReward) SETTINGS.mathReward = d.mathReward;
+                    if(d.referralBonus) SETTINGS.referBonus = d.referralBonus; 
+                    if(d.signupBonus) SETTINGS.signupBonus = d.signupBonus;
+                    if(d.minWithdraw) SETTINGS.minWithdraw = d.minWithdraw;
+
+                    updateWithdrawUI();
+                    
+                    if (d.socials) {
+                        const s = d.socials;
+                        const container = document.getElementById('social-container');
+                        const iconsDiv = document.getElementById('social-icons');
+                        iconsDiv.innerHTML = '';
+                        let hasIcons = false;
+
+                        if (s.telegram) {
+                            hasIcons = true;
+                            iconsDiv.innerHTML += `<a href="${s.telegram}" target="_blank" class="w-10 h-10 bg-[#229ED9] rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition hover:bg-white hover:text-[#229ED9]"><i class="fab fa-telegram-plane text-xl"></i></a>`;
+                        }
+                        if (s.youtube) {
+                            hasIcons = true;
+                            iconsDiv.innerHTML += `<a href="${s.youtube}" target="_blank" class="w-10 h-10 bg-[#FF0000] rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition hover:bg-white hover:text-[#FF0000]"><i class="fab fa-youtube text-xl"></i></a>`;
+                        }
+                        if (s.instagram) {
+                            hasIcons = true;
+                            iconsDiv.innerHTML += `<a href="${s.instagram}" target="_blank" class="w-10 h-10 bg-gradient-to-tr from-[#FFDC80] via-[#FD1D1D] to-[#833AB4] rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition hover:opacity-80"><i class="fab fa-instagram text-xl"></i></a>`;
+                        }
+
+                        if (hasIcons) {
+                            container.classList.remove('hidden');
+                        } else {
+                            container.classList.add('hidden');
+                        }
+                    }
+                    
+                    const referDisp = document.getElementById('refer-bonus-disp');
+                    if(referDisp) referDisp.innerText = SETTINGS.referBonus;
+                }
+            }, (error) => {
+                console.error("Settings Sync Error:", error);
+            });
+        }
+
+        function updateHeader() {
+            if (!userData) return;
+            document.getElementById('header-balance').innerText = userData.balance || 0;
+            document.getElementById('wallet-balance').innerText = userData.balance || 0;
+            document.getElementById('profile-total-earned').innerText = userData.totalEarned || 0;
+            document.getElementById('total-refers-display').innerText = userData.totalRefers || 0;
+            document.getElementById('my-ref-code').innerText = userData.referralCode || '...';
+        }
+
+        function updateWithdrawUI() {
+            document.getElementById('val-disp').innerText = SETTINGS.coinValue;
+            const select = document.getElementById('withdraw-method');
+            select.innerHTML = '';
+            
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = "";
+            defaultOpt.innerText = "Select Payment Method";
+            defaultOpt.disabled = true;
+            defaultOpt.selected = true;
+            select.appendChild(defaultOpt);
+
+            if(SETTINGS.paymentMethods && SETTINGS.paymentMethods.length > 0) {
+                SETTINGS.paymentMethods.forEach(method => {
+                    const opt = document.createElement('option'); opt.value = method; opt.innerText = method; select.appendChild(opt);
+                });
+            }
+            
+            // DYNAMIC UPDATE OF PLACEHOLDER
+            const minW = SETTINGS.minWithdraw || 100;
+            const amountInput = document.getElementById('withdraw-amount');
+            if(amountInput) {
+                amountInput.placeholder = `Amount (Min ${minW} Coins)`;
+                amountInput.min = minW;
+            }
+
+            loadHistory(); loadEarningHistory();
+        }
+
+        function updatePlaceholder() {
+            const select = document.getElementById('withdraw-method');
+            const input = document.getElementById('withdraw-details');
+            const val = select.value.toLowerCase();
+            
+            if(val.includes('upi')) input.placeholder = "Enter UPI ID (e.g. name@okhdfcbank)";
+            else if(val.includes('paytm') || val.includes('number') || val.includes('gpay') || val.includes('phonepe')) input.placeholder = "Enter Mobile Number";
+            else if(val.includes('paypal') || val.includes('email')) input.placeholder = "Enter Email Address";
+            else if(val.includes('bank')) input.placeholder = "Enter Account No. & IFSC";
+            else input.placeholder = "Enter Payment Details";
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'text-indigo-400'); el.classList.add('text-slate-500');
+                el.querySelector('div').classList.remove('bg-indigo-500/10', 'text-indigo-400');
+            });
+            const navId = 'nav-' + pageId.replace('-page', '');
+            const navEl = document.getElementById(navId);
+            if(navEl) {
+                navEl.classList.add('active', 'text-indigo-400'); navEl.classList.remove('text-slate-500');
+                navEl.querySelector('div').classList.add('bg-indigo-500/10', 'text-indigo-400');
+            }
+        }
+
+        // --- GAMES LOGIC START ---
+        let gameState = { level: 1, winsInRow: 0, timer: 30, interval: null, targetIcon: '', icons: ['fa-apple-alt', 'fa-carrot', 'fa-lemon', 'fa-pepper-hot', 'fa-pizza-slice', 'fa-ice-cream', 'fa-fish', 'fa-cat', 'fa-dog', 'fa-crow', 'fa-dragon', 'fa-ghost', 'fa-robot', 'fa-rocket', 'fa-car', 'fa-bicycle', 'fa-tree', 'fa-leaf', 'fa-fire', 'fa-water'] };
+        function startImageFinderGame() { document.getElementById('game-modal').classList.remove('hidden'); document.getElementById('game-modal').classList.add('flex'); gameState.level = 1; gameState.winsInRow = 0; gameState.timer = 30; document.getElementById('win-streak').innerText = 0; setupLevel(); }
+        function setupLevel() {
+            updateTimerDisplay(); const randomIndex = Math.floor(Math.random() * gameState.icons.length); gameState.targetIcon = gameState.icons[randomIndex]; document.getElementById('target-icon').className = `fas ${gameState.targetIcon} text-5xl text-white drop-shadow-lg`;
+            const grid = document.getElementById('game-grid'); grid.innerHTML = ''; let gridSize = 12; let cellIcons = [gameState.targetIcon];
+            for(let i=1; i<gridSize; i++) { let randomWrong; do { randomWrong = gameState.icons[Math.floor(Math.random() * gameState.icons.length)]; } while(randomWrong === gameState.targetIcon); cellIcons.push(randomWrong); }
+            cellIcons.sort(() => Math.random() - 0.5);
+            cellIcons.forEach(iconClass => { const cell = document.createElement('div'); cell.className = 'game-cell group'; const colors = ['text-pink-400', 'text-blue-400', 'text-green-400', 'text-yellow-400', 'text-purple-400']; const randomColor = colors[Math.floor(Math.random() * colors.length)]; cell.innerHTML = `<i class="fas ${iconClass} ${randomColor} text-2xl group-hover:scale-110 transition"></i>`; cell.onclick = () => handleGameClick(iconClass, cell); grid.appendChild(cell); });
+            if(gameState.interval) clearInterval(gameState.interval);
+            gameState.interval = setInterval(() => { gameState.timer--; updateTimerDisplay(); if(gameState.timer <= 0) { clearInterval(gameState.interval); document.getElementById('game-modal').classList.add('hidden'); document.getElementById('game-modal').classList.remove('flex'); showToast("Time Up!", "error"); } }, 1000);
+        }
+        function handleGameClick(clickedIcon, cellElement) {
+            if(clickedIcon === gameState.targetIcon) {
+                gameState.winsInRow++; document.getElementById('win-streak').innerText = gameState.winsInRow; cellElement.style.background = 'linear-gradient(45deg, #10b981, #34d399)';
+                if(gameState.winsInRow >= 3) { clearInterval(gameState.interval); setTimeout(() => { document.getElementById('game-modal').classList.add('hidden'); document.getElementById('game-modal').classList.remove('flex'); processGameWin("Image Finder Master"); }, 500); } else { setTimeout(() => { gameState.timer += 5; setupLevel(); }, 400); }
+            } else { cellElement.style.background = '#ef4444'; gameState.timer -= 5; updateTimerDisplay(); setTimeout(() => cellElement.style.background = '', 300); }
+        }
+        function updateTimerDisplay() { document.getElementById('game-timer').innerHTML = `<i class="far fa-clock text-xs"></i> 00:${gameState.timer.toString().padStart(2, '0')}`; }
+        function closeGame() { clearInterval(gameState.interval); document.getElementById('game-modal').classList.add('hidden'); document.getElementById('game-modal').classList.remove('flex'); }
+
+        let tttBoard = ['', '', '', '', '', '', '', '', ''], tttActive = false;
+        function startTicTacToe() { document.getElementById('ttt-modal').classList.remove('hidden'); document.getElementById('ttt-modal').classList.add('flex'); tttBoard = ['', '', '', '', '', '', '', '', '']; tttActive = true; renderTTT(); document.getElementById('ttt-status').innerText = "Your Turn (X)"; }
+        function renderTTT() { const board = document.getElementById('ttt-board'); board.innerHTML = ''; tttBoard.forEach((val, idx) => { const cell = document.createElement('div'); cell.className = `ttt-cell ${val === 'X' ? 'x' : 'o'}`; cell.innerText = val; cell.onclick = () => userMove(idx); board.appendChild(cell); }); }
+        function userMove(idx) {
+            if(!tttActive || tttBoard[idx] !== '') return;
+            tttBoard[idx] = 'X'; renderTTT();
+            if(checkWin('X')) { tttActive = false; document.getElementById('ttt-status').innerText = "You Won!"; setTimeout(() => { closeTicTacToe(); processGameWin("Tic Tac Toe Champion"); }, 1000); return; }
+            if(tttBoard.includes('')) { document.getElementById('ttt-status').innerText = "AI Thinking..."; setTimeout(compMoveSmart, 600); } else { document.getElementById('ttt-status').innerText = "Draw!"; setTimeout(startTicTacToe, 1500); }
+        }
+        function compMoveSmart() {
+            if(!tttActive) return; let move = -1; move = findWinningMove('O'); if(move === -1) move = findWinningMove('X'); if(move === -1 && tttBoard[4] === '') move = 4; if(move === -1) { let empty = tttBoard.map((v, i) => v === '' ? i : null).filter(v => v !== null); move = empty[Math.floor(Math.random() * empty.length)]; }
+            tttBoard[move] = 'O'; renderTTT();
+            if(checkWin('O')) { tttActive = false; document.getElementById('ttt-status').innerText = "Computer Won!"; setTimeout(() => { showToast("You Lost! Try Again.", "error"); startTicTacToe(); }, 1500); } else { document.getElementById('ttt-status').innerText = "Your Turn (X)"; }
+        }
+        function findWinningMove(p) { const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; for(let c of wins) { const [x,y,z]=c; if(tttBoard[x]===p && tttBoard[y]===p && tttBoard[z]==='') return z; if(tttBoard[x]===p && tttBoard[z]===p && tttBoard[y]==='') return y; if(tttBoard[y]===p && tttBoard[z]===p && tttBoard[x]==='') return x; } return -1; }
+        function checkWin(p) { const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return wins.some(c => c.every(i => tttBoard[i] === p)); }
+        function closeTicTacToe() { document.getElementById('ttt-modal').classList.add('hidden'); document.getElementById('ttt-modal').classList.remove('flex'); }
+
+        let mathAnswer = 0;
+        function startMathGame() { document.getElementById('math-modal').classList.remove('hidden'); document.getElementById('math-modal').classList.add('flex'); generateMathQuestion(); }
+        function generateMathQuestion() { const n1 = Math.floor(Math.random()*20)+1, n2 = Math.floor(Math.random()*20)+1; mathAnswer = n1+n2; document.getElementById('math-question').innerText = `${n1} + ${n2} = ?`; let opts = [mathAnswer, mathAnswer + Math.floor(Math.random()*5)+1, mathAnswer - Math.floor(Math.random()*5)-1, mathAnswer + 10]; opts.sort(() => Math.random() - 0.5); const cont = document.getElementById('math-options'); cont.innerHTML = ''; opts.forEach(opt => { const btn = document.createElement('button'); btn.className = 'bg-slate-700 hover:bg-indigo-600 text-white font-bold py-4 rounded-xl text-xl transition'; btn.innerText = opt; btn.onclick = () => checkMathAnswer(opt); cont.appendChild(btn); }); }
+        function checkMathAnswer(ans) { if(ans === mathAnswer) { document.getElementById('math-modal').classList.add('hidden'); document.getElementById('math-modal').classList.remove('flex'); processGameWin("Math Genius"); } else { showToast("Wrong! Try Again", "error"); generateMathQuestion(); } }
+        function closeMathGame() { document.getElementById('math-modal').classList.add('hidden'); document.getElementById('math-modal').classList.remove('flex'); }
+        // --- GAMES LOGIC END ---
+
+        async function handleWithdraw(e) {
+            e.preventDefault(); 
+            const m = document.getElementById('withdraw-method').value;
+            const d = document.getElementById('withdraw-details').value.trim();
+            const a = parseInt(document.getElementById('withdraw-amount').value);
+            
+            // USE DYNAMIC MIN WITHDRAW VALUE
+            const minWithdrawAmount = SETTINGS.minWithdraw || 100;
+            
+            if (!m) return showToast("Select Payment Method", "error");
+            
+            const method = m.toLowerCase();
+            const value = d;
+            let isValid = true;
+            let errorMsg = "";
+
+            if (method.includes('upi')) {
+                if (!/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(value)) {
+                    isValid = false;
+                    errorMsg = "Invalid UPI ID format (e.g. user@bank)";
+                }
+            } else if (method.includes('email') || method.includes('paypal')) {
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    isValid = false;
+                    errorMsg = "Invalid Email Address";
+                }
+            } else if (method.includes('paytm') || method.includes('number') || method.includes('phone') || method.includes('gpay')) {
+                if (!/^\d{10,12}$/.test(value)) {
+                    isValid = false;
+                    errorMsg = "Enter valid 10-12 digit number";
+                }
+            }
+
+            if (!isValid) return showToast(errorMsg, "error");
+
+            if (a > userData.balance) return showToast("Insufficient Coins!", "error");
+            if (a < minWithdrawAmount) return showToast(`Min withdraw ${minWithdrawAmount} coins`, "error");
+            
+            try {
+                const ref = db.collection(`artifacts/${appId}/users/${currentUser.uid}/profile`).doc('main');
+                await db.runTransaction(async (t) => { const doc = await t.get(ref); t.update(ref, { balance: (doc.data().balance || 0) - a }); });
+                
+                await db.collection(`artifacts/${appId}/public/data/withdrawals`).add({ userId: currentUser.uid, userName: userData.firstName, amount: Number(a), method: m, details: d, status: 'pending', refundProcessed: false, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                
+                showSuccessModal();
+                e.target.reset();
+            } catch (e) { showToast("Error", "error"); }
+        }
+
+        // --- FIXED: Close Button Logic ---
+        function showSuccessModal() {
+             const modal = document.getElementById('payment-success-modal');
+             if(modal) {
+                 modal.classList.remove('hidden');
+                 modal.classList.add('flex');
+                 modal.style.display = 'flex'; // Force show
+                 
+                 const sound = document.getElementById('success-sound');
+                 if(sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Audio play prevented", e));
+                 }
+
+                 // NEW: Auto Close after 5 seconds
+                 setTimeout(() => {
+                     closeSuccessModal();
+                 }, 5000);
+             }
+        }
+
+        function closeSuccessModal() {
+            const modal = document.getElementById('payment-success-modal');
+            if(modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.style.display = 'none'; // Force hide
+            }
+            
+            const sound = document.getElementById('success-sound');
+            if(sound) {
+                sound.pause();
+                sound.currentTime = 0;
+            }
+        }
+
+        function loadHistory() {
+            db.collection(`artifacts/${appId}/public/data/withdrawals`)
+              .where("userId", "==", currentUser.uid)
+              .onSnapshot(s => {
+                const c = document.getElementById('tx-history'); c.innerHTML = ''; 
+                let docs = []; 
+                s.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+                
+                if (docs.length === 0) return c.innerHTML = '<div class="text-center py-6 text-slate-500 text-xs border border-dashed border-slate-700 rounded-xl">No transactions yet.</div>';
+                
+                docs.forEach(d => {
+                    if (d.status === 'rejected' && !d.refundProcessed) {
+                        processRefund(d);
+                    }
+                });
+
+                docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                docs.slice(0, 20).forEach(d => { 
+                    const col = d.status === 'paid' ? 'text-green-400' : (d.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'); 
+                    c.innerHTML += `<div class="glass-card p-3 rounded-xl flex justify-between items-center"><div><p class="font-bold text-sm text-white">${d.method}</p><p class="text-[10px] text-slate-400">${d.details}</p></div><div class="text-right"><p class="font-bold text-white text-sm">-${d.amount}</p><p class="text-[10px] ${col} uppercase font-bold">${d.status}</p></div></div>`; 
+                });
+            });
+        }
+
+        async function processRefund(docData) {
+            try {
+                if(docData.refundProcessed) return;
+
+                await db.runTransaction(async (t) => {
+                    const withdrawRef = db.collection(`artifacts/${appId}/public/data/withdrawals`).doc(docData.id);
+                    const userRef = db.collection(`artifacts/${appId}/users/${currentUser.uid}/profile`).doc('main');
+                    
+                    const wDoc = await t.get(withdrawRef);
+                    if (!wDoc.exists || wDoc.data().refundProcessed) {
+                        return; 
+                    }
+                    
+                    const uDoc = await t.get(userRef);
+                    const currentBalance = uDoc.data().balance || 0;
+                    const refundAmount = Number(docData.amount);
+                    
+                    t.update(userRef, { balance: currentBalance + refundAmount });
+                    t.update(withdrawRef, { refundProcessed: true });
+                });
+                
+                showToast(`Refund processed: +${docData.amount} Coins`, "success");
+                
+                db.collection(`artifacts/${appId}/users/${currentUser.uid}/earnings`).add({ 
+                    amount: Number(docData.amount), 
+                    source: 'Refund (Rejected Withdrawal)', 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+
+            } catch (e) {
+                console.error("Refund error", e);
+            }
+        }
+
+        function loadEarningHistory() {
+            db.collection(`artifacts/${appId}/users/${currentUser.uid}/earnings`).onSnapshot(s => {
+                const c = document.getElementById('earning-history'); c.innerHTML = ''; let docs = []; s.forEach(doc => docs.push(doc.data()));
+                if (docs.length === 0) return c.innerHTML = '<div class="text-center py-6 text-slate-500 text-xs bg-slate-800/30 rounded-xl border border-dashed border-slate-700">No earnings yet.</div>';
+                docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                docs.slice(0, 10).forEach(d => { c.innerHTML += `<div class="glass-card p-3 rounded-xl flex justify-between items-center border-l-2 border-green-500"><div><p class="font-bold text-sm text-white">${d.source}</p><p class="text-[10px] text-slate-400">Won</p></div><div class="text-right"><p class="font-bold text-green-400 text-sm">+${d.amount}</p></div></div>`; });
+            });
+        }
+
+        function copyRefCode() { navigator.clipboard.writeText(userData.referralCode); showToast("Code Copied!", "success"); }
+        function showToast(msg, type) {
+            const c = document.getElementById('toast-container'), t = document.createElement('div');
+            t.className = `${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white text-xs font-bold px-4 py-3 rounded-full shadow-lg flex items-center gap-2 animate-float z-[101]`;
+            t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-info-circle'}"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
