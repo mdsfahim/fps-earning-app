@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Earning Mini App</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="watermark">SUPERBOT</div>
+        <div class="user-info">
+            <img src="https://api.dicebear.com/6.x/avataaars/svg?seed=Felixr" alt="User" class="avatar">
+            <div class="user-details">
+                <span class="user-name">Loading...</span>
+                <span class="user-level" id="user-level-display">Lvl 3</span>
+            </div>
+        </div>
+        <div class="wallet">
+            <span>1,250</span><span>🪙</span>
+        </div>
+    </header>
+
+    <main id="app-content">
+        </main>
+
+    <nav id="bottom-nav">
+        <div class="nav-item active" onclick="navigateTo('home', this)">
+            <ion-icon name="home" data-icon="home" class="nav-icon"></ion-icon>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('earn', this)">
+            <ion-icon name="cash-outline" data-icon="cash" class="nav-icon"></ion-icon>
+            <span>Earn</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('store', this)">
+            <ion-icon name="cart-outline" data-icon="cart" class="nav-icon"></ion-icon>
+            <span>Store</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('game', this)">
+            <ion-icon name="game-controller-outline" data-icon="game-controller" class="nav-icon"></ion-icon>
+            <span>Game</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('ads', this)">
+            <ion-icon name="megaphone-outline" data-icon="megaphone" class="nav-icon"></ion-icon>
+            <span>Ads</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('profile', this)">
+            <ion-icon name="person-outline" data-icon="person" class="nav-icon"></ion-icon>
+            <span>Profile</span>
+        </div>
+    </nav>
+<div id="subpage-container" class="subpage-overlay">
+        <div class="subpage-header">
+            <button class="back-btn" onclick="closeSubPage()">
+                <ion-icon name="chevron-back-outline"></ion-icon> Back
+            </button>
+            <h3 id="subpage-title">Loading...</h3>
+            <div style="width: 60px;"></div> </div>
+        <div id="subpage-content" class="subpage-content">
+            </div>
+    </div>
+    <div id="tg-warning-popup" class="tg-popup-overlay">
+        <div class="tg-popup-content">
+            <button id="dev-close-btn" class="dev-close-btn" onclick="closeWarningPopup()">✕</button>
+            <div class="tg-popup-icon">⚠️</div>
+            <h2>Telegram Required</h2>
+            <p>Please open this via our official Telegram Bot.</p>
+        </div>
+    </div>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

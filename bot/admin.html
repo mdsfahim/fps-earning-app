@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS Admin Panel</title>
+    <link rel="stylesheet" href="admin-style.css">
+</head>
+<body>
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>FPS <span>Admin</span></h2>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px;">MD Shamsuzzaman Fahim</p>
+        </div>
+        <nav class="admin-nav">
+            <a href="#" class="active"><ion-icon name="grid-outline"></ion-icon> Dashboard</a>
+            <a href="#"><ion-icon name="people-outline"></ion-icon> Users</a>
+            <a href="#"><ion-icon name="toggle-outline"></ion-icon> Modules</a>
+            <a href="#"><ion-icon name="color-palette-outline"></ion-icon> Levels & UI</a>
+            <a href="#"><ion-icon name="settings-outline"></ion-icon> Settings</a>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </button>
+                <h1>Module Controller</h1>
+            </div>
+            
+            <div class="admin-profile">
+                <span class="admin-name-text">Super Admin</span>
+                <div class="admin-avatar">A</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            
+            <div class="info-card">
+                <h3>Live App Controls</h3>
+                <p>Use these switches to instantly enable or disable sections of the Telegram Mini App. Disabled sections will display the "Coming Soon" screen to users.</p>
+            </div>
+
+            <div class="module-grid">
+                
+                <div class="toggle-card">
+                    <div class="card-info">
+                        <ion-icon name="cash-outline" class="card-icon"></ion-icon>
+                        <div>
+                            <h4>Earn Tab</h4>
+                            <p>Task lists and daily rewards</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-earn" onchange="updateModule('earn', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-card">
+                    <div class="card-info">
+                        <ion-icon name="cart-outline" class="card-icon"></ion-icon>
+                        <div>
+                            <h4>Store Tab</h4>
+                            <p>Coin redemption and shop</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-store" onchange="updateModule('store', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-card">
+                    <div class="card-info">
+                        <ion-icon name="game-controller-outline" class="card-icon"></ion-icon>
+                        <div>
+                            <h4>Game Tab</h4>
+                            <p>Interactive mini-games</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-game" onchange="updateModule('game', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-card">
+                    <div class="card-info">
+                        <ion-icon name="megaphone-outline" class="card-icon"></ion-icon>
+                        <div>
+                            <h4>Ads Tab</h4>
+                            <p>User self-serve advertising</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-ads" onchange="updateModule('ads', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+            </div>
+            
+            <div class="content-section" style="margin-top: 40px;">
+                <div class="info-card" style="border-left-color: #ffcc00;">
+                    <h3 style="color: #ffcc00;">Level Thresholds</h3>
+                    <p>Set the coin balance required for a user to reach each level. Level 1 is the default starting point (0 coins).</p>
+                </div>
+
+                <div class="level-settings-card">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Level 2 <span style="color: #34aadc;">(Light Blue)</span></label>
+                            <input type="number" id="lvl2-req" placeholder="e.g. 1000">
+                        </div>
+                        <div class="input-group">
+                            <label>Level 3 <span style="color: #ffcc00;">(Yellow/Orange)</span></label>
+                            <input type="number" id="lvl3-req" placeholder="e.g. 5000">
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Level 4 <span style="color: #ff3b30;">(Orange/Red)</span></label>
+                            <input type="number" id="lvl4-req" placeholder="e.g. 15000">
+                        </div>
+                        <div class="input-group">
+                            <label>Level 5 <span style="color: #8b0000;">(Dark Red/Maroon)</span></label>
+                            <input type="number" id="lvl5-req" placeholder="e.g. 50000">
+                        </div>
+                    </div>
+
+                    <button onclick="saveLevelSettings()" class="btn-save">Save Thresholds</button>
+                </div>
+            </div>
+            
+            <div class="content-section" style="margin-top: 40px;">
+                <div class="info-card" style="border-left-color: var(--success);">
+                    <h3 style="color: var(--success);">Task Manager (Earn Tab)</h3>
+                    <p>Create tasks for users to complete. These will instantly appear in the user's Earn tab. In a real app, you would verify completion via an API.</p>
+                </div>
+
+                <div class="level-settings-card" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 15px;">Create New Task</h4>
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 2;">
+                            <label>Task Title</label>
+                            <input type="text" id="task-title" placeholder="e.g., Join our Official Channel">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>Reward (🪙)</label>
+                            <input type="number" id="task-reward" placeholder="e.g., 500">
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Task Icon</label>
+                            <select id="task-icon" class="admin-select">
+                                <option value="📢">📢 Telegram (Megaphone)</option>
+                                <option value="📺">📺 YouTube (TV)</option>
+                                <option value="🐦">🐦 Twitter / X (Bird)</option>
+                                <option value="🌐">🌐 Website (Globe)</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="flex: 2;">
+                            <label>Action URL</label>
+                            <input type="url" id="task-url" placeholder="https://t.me/yourchannel">
+                        </div>
+                    </div>
+
+                    <button onclick="addTask()" class="btn-save" style="background-color: var(--success);">+ Add Task</button>
+                </div>
+
+                <div class="level-settings-card">
+                    <h4 style="margin-bottom: 15px;">Active Tasks</h4>
+                    <div id="admin-task-list" class="admin-task-list">
+                        </div>
+                </div>
+            </div>
+            
+<div class="content-section" style="margin-top: 40px;">
+                <div class="info-card" style="border-left-color: #a200ff;">
+                    <h3 style="color: #a200ff;">Game Arcade Manager</h3>
+                    <p>Add HTML games to your Arcade. Make sure the HTML file exists in your "games/" folder before adding it here.</p>
+                </div>
+
+                <div class="level-settings-card" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 15px;">Add New Game</h4>
+                    
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 2;">
+                            <label>Game Title</label>
+                            <input type="text" id="game-title" placeholder="e.g. Coin Tapper">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>Reward per Win</label>
+                            <input type="number" id="game-reward" placeholder="e.g. 100">
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 1;">
+                            <label>Icon (Emoji)</label>
+                            <input type="text" id="game-icon" placeholder="🎮" maxlength="2">
+                        </div>
+                        <div class="input-group" style="flex: 2;">
+                            <label>Short Description</label>
+                            <input type="text" id="game-desc" placeholder="Tap the coin as fast as you can!">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>File Name (No .html)</label>
+                            <input type="text" id="game-file" placeholder="e.g. tap">
+                        </div>
+                    </div>
+
+                    <button onclick="addGame()" class="btn-save" style="background-color: #a200ff;">+ Publish Game</button>
+                </div>
+
+                <div class="level-settings-card">
+                    <h4 style="margin-bottom: 15px;">Published Games</h4>
+                    <div id="admin-game-list" class="admin-task-list"></div>
+                </div>
+            </div>
+            
+            <div class="content-section" style="margin-top: 40px;">
+                <div class="info-card" style="border-left-color: #007aff;">
+                    <h3 style="color: #007aff;">E-Commerce Store Manager</h3>
+                    <p>Add products, gift cards, or cashout methods to the rewards store.</p>
+                </div>
+
+                <div class="level-settings-card" style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 15px;">Add New Product</h4>
+                    
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 2;">
+                            <label>Product Title</label>
+                            <input type="text" id="store-title" placeholder="e.g. bKash / Nagad">
+                        </div>
+                        <div class="input-group" style="flex: 2;">
+                            <label>Subtitle / Category</label>
+                            <input type="text" id="store-subtitle" placeholder="e.g. Direct Transfer">
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group" style="flex: 1;">
+                            <label>Icon (Emoji)</label>
+                            <input type="text" id="store-icon" placeholder="💸" maxlength="2">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>Price (🪙)</label>
+                            <input type="number" id="store-price" placeholder="e.g. 50000">
+                        </div>
+                        <div class="input-group" style="flex: 2;">
+                            <label>Card Theme (Color)</label>
+                            <select id="store-theme" class="admin-select">
+                                <option value="linear-gradient(135deg, #e2136e 0%, #f7941d 100%)">Pink to Orange (bKash Style)</option>
+                                <option value="linear-gradient(135deg, #007aff 0%, #00c6ff 100%)">Blue to Cyan (Tech Style)</option>
+                                <option value="linear-gradient(135deg, #8a2be2 0%, #b82aff 100%)">Purple to Pink (Premium)</option>
+                                <option value="linear-gradient(135deg, #26a17b 0%, #34d399 100%)">Green to Emerald (Crypto)</option>
+                                <option value="linear-gradient(135deg, #ea4335 0%, #fbbc05 100%)">Red to Yellow (Google Play)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="addStoreItem()" class="btn-save" style="background-color: #007aff;">+ Add to Store</button>
+                </div>
+
+                <div class="level-settings-card">
+                    <h4 style="margin-bottom: 15px;">Active Store Items</h4>
+                    <div id="admin-store-list" class="admin-task-list"></div>
+                </div>
+            </div>
+
+    </main>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>
