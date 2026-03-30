@@ -1,0 +1,67 @@
+<style>
+    .game-fullscreen {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: #0f0f13; z-index: 200; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; user-select: none;
+    }
+    .exit-btn {
+        position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.1);
+        border: none; color: white; padding: 10px 15px; border-radius: 12px; font-weight: bold; cursor: pointer;
+    }
+    .big-coin {
+        font-size: 8rem; filter: drop-shadow(0 0 30px rgba(255,204,0,0.4)); cursor: pointer;
+        transition: transform 0.05s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .big-coin:active { transform: scale(0.9); }
+    .taps-left { font-size: 2rem; font-weight: bold; margin-bottom: 30px; color: white; }
+</style>
+
+<div class="game-fullscreen">
+    <button class="exit-btn" onclick="exitGame()">← Exit Arcade</button>
+    
+    <div class="taps-left">Tap <span id="tap-target">50</span> more times!</div>
+    
+    <div id="the-coin" class="big-coin">💰</div>
+</div>
+
+<script>
+    // This script runs when the game is loaded into the DOM
+    (function() {
+        let tapsNeeded = 50;
+        let gameReward = 0;
+        let isGameOver = false;
+
+        const coin = document.getElementById('the-coin');
+        const display = document.getElementById('tap-target');
+        
+        // Listen for the reward amount sent by the Main App
+        document.addEventListener('gameLoaded', function rewardListener(e) {
+            gameReward = e.detail.reward;
+            // Remove listener so it doesn't fire multiple times if they play again
+            document.removeEventListener('gameLoaded', rewardListener); 
+        });
+
+        coin.addEventListener('pointerdown', () => {
+            if (isGameOver) return;
+            
+            tapsNeeded--;
+            display.innerText = tapsNeeded;
+
+            if (tapsNeeded <= 0) {
+                isGameOver = true;
+                display.innerText = "YOU WIN!";
+                coin.style.display = 'none';
+                
+                // Add coins to global wallet visual (In real app, trigger backend API)
+                const walletEl = document.querySelector('.wallet span:first-child');
+                let currentVal = parseInt(walletEl.innerText.replace(/,/g, ''));
+                walletEl.innerText = (currentVal + gameReward).toLocaleString();
+                
+                alert(`You won ${gameReward} 🪙!`);
+                
+                // Return to arcade after a short delay
+                setTimeout(exitGame, 1000);
+            }
+        });
+    })();
+</script>
