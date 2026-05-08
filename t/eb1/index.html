@@ -512,14 +512,27 @@
   </div>
 <div class="dev-floating-controls">
       <div class="dev-panel">
+        
         <div class="dev-title">🛠️ Modify Balance</div>
         <div class="dev-input-group">
           <input type="number" id="devAmount" value="5" min="0.1" step="0.1" placeholder="Amount">
         </div>
         <div class="dev-btn-group">
-          <button onclick="devAdjustBalance('add')" class="dev-btn add"><i class="fas fa-plus"></i> Add</button>
-          <button onclick="devAdjustBalance('sub')" class="dev-btn sub"><i class="fas fa-minus"></i> Sub</button>
+          <button onclick="devAdjustBalance('add')" class="dev-btn add"><i class="fas fa-plus"></i></button>
+          <button onclick="devAdjustBalance('sub')" class="dev-btn sub"><i class="fas fa-minus"></i></button>
         </div>
+
+        <hr style="margin: 12px 0; border: 0; border-top: 1px dashed rgba(0,0,0,0.1);">
+
+        <div class="dev-title">👥 Modify Referrals</div>
+        <div class="dev-input-group">
+          <input type="number" id="devRefs" value="1" min="1" step="1" placeholder="Referrals">
+        </div>
+        <div class="dev-btn-group">
+          <button onclick="devAdjustReferrals('add')" class="dev-btn add"><i class="fas fa-plus"></i></button>
+          <button onclick="devAdjustReferrals('sub')" class="dev-btn sub"><i class="fas fa-minus"></i></button>
+        </div>
+
       </div>
     </div>
   <div class="nav">
@@ -1161,6 +1174,39 @@
         toast(`🛠️ Balance updated!`);
       } catch (err) {
         toast("Error updating balance");
+      }
+    }
+    // ====== DEV TESTING: CUSTOM REFERRAL CONTROLS ======
+    async function devAdjustReferrals(action) {
+      if (!appState || !appState.user) return toast("User not loaded yet!");
+
+      // Get the amount typed in the input box (parsing as a whole number)
+      let amountStr = document.getElementById('devRefs').value;
+      let amount = parseInt(amountStr);
+      
+      if (isNaN(amount) || amount <= 0) return toast("Please enter a valid amount");
+
+      // Grab current stats
+      let currentRefs = appState.user.referrals || 0;
+      let newRefs = currentRefs;
+
+      // Apply math based on which button was clicked
+      if (action === 'add') {
+        newRefs += amount;
+      } else if (action === 'sub') {
+        newRefs -= amount;
+      }
+
+      // 🛑 Crucial safeguard: Prevent negative referrals
+      if (newRefs < 0) newRefs = 0;
+
+      try {
+        await db.ref('users/' + appState.user.id).update({
+          referrals: newRefs
+        });
+        toast(`🛠️ Referrals updated to ${newRefs}!`);
+      } catch (err) {
+        toast("Error updating referrals");
       }
     }
   </script>
