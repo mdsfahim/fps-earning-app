@@ -250,29 +250,59 @@
       position: fixed;
       bottom: 90px; /* Sits just above your bottom nav */
       right: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
       z-index: 9999;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      border: 2px solid rgba(108, 92, 231, 0.3);
+      width: 140px;
     }
-    .dev-fab {
-      border: none;
-      border-radius: 50px;
-      padding: 10px 16px;
-      font-family: 'Poppins', sans-serif;
+    .dev-title {
+      font-size: 0.75rem;
       font-weight: 800;
-      font-size: 0.85rem;
+      color: #333;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .dev-input-group input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+      margin-bottom: 8px;
+      font-family: 'Poppins', sans-serif;
+    }
+    .dev-input-group input:focus {
+      border-color: var(--primary);
+    }
+    .dev-btn-group {
+      display: flex;
+      gap: 5px;
+      justify-content: space-between;
+    }
+    .dev-btn {
+      flex: 1;
+      border: none;
+      padding: 8px 0;
+      border-radius: 8px;
       color: white;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
       cursor: pointer;
+      font-weight: 800;
+      font-size: 0.8rem;
+      transition: 0.2s;
       display: flex;
       align-items: center;
-      gap: 8px;
-      transition: 0.2s;
+      justify-content: center;
+      gap: 4px;
     }
-    .dev-fab.btn-bal { background: linear-gradient(135deg, #00b894, #00cec9); }
-    .dev-fab.btn-ref { background: linear-gradient(135deg, #0984e3, #74b9ff); }
-    .dev-fab:active { transform: scale(0.92); }
+    .dev-btn.add { background: linear-gradient(135deg, #00b894, #00cec9); }
+    .dev-btn.sub { background: linear-gradient(135deg, #ff4757, #ff6b81); }
+    .dev-btn:active { transform: scale(0.92); }
   </style>
 <link rel="me" href="https://www.blogger.com/profile/03198812201552100212">
 <meta name="google-adsense-platform-account" content="ca-host-pub-1556223355139109">
@@ -290,14 +320,14 @@
     </div>
   </div>
 
-  <div id="toast" class="toast">Ad loading issue, try again.</div>
+  <div id="toast" class="toast">Alert</div>
 
   <!-- Daily Bonus Modal -->
   <div id="bonusOverlay" class="bonus-overlay">
     <div class="bonus-card"><div class="bonus-glow"></div><div class="bonus-body">
       <div class="bonus-badge"><i class="fas fa-gift"></i> DAILY BONUS</div>
       <div class="bonus-title">Claim Your Bonus!</div>
-      <div class="bonus-sub" id="bonusSubText">Watch ads completely or bonus will be cancelled. Try again.</div>
+      <div class="bonus-sub" id="bonusSubText">Watch 2 short ads to claim your bonus. If you skip, bonus will be cancelled.</div>
       <div class="bonus-amt"><span id="bonusAmt">5</span> <span class="currency">TK</span></div>
       <div class="bonus-actions">
         <button id="btnClaimBonus" class="bonus-btn bonus-claim" onclick="claimDailyBonus()"><i class="fas fa-play-circle"></i> Watch Ads &amp; Claim</button>
@@ -362,7 +392,7 @@
     </div>
 
     <!-- HOME -->
-    <div id="page-home" class="page-section">
+    <div id="page-home" class="page-section active">
       <div class="sec-head"><i class="fas fa-gift"></i> Daily Rewards</div>
       <div style="padding:0 20px 15px;"><button class="btn-main" onclick="showBonus()" style="background:linear-gradient(135deg,#00b894,#00cec9);"><i class="fas fa-box-open"></i> Open Daily Bonus</button></div>
       <div class="sec-head"><i class="fas fa-play-circle"></i> Daily Ads</div>
@@ -396,21 +426,17 @@
     <!-- LEADERBOARD -->
     <div id="page-leaderboard" class="page-section">
       <div class="leaderboard-title">Top 10 Earners</div>
-      <div class="podium-container" id="podium-area"><div class="podium-item rank-2"><i class="fas fa-crown crown"></i><img src="https://t.me/i/userpic/320/V1774qAYRGVsZnMOhD-IlsHLcatImpnOXqR1yTHtIGwacihNiDmVTr09d-bISSKl.svg" class="podium-img" onerror="this.src='https://via.placeholder.com/100'"><div class="rank-name">Jubayer Al</div><div class="rank-stats-col"><div class="rank-badge badge-bal">5.65 TK</div><div class="rank-badge badge-ref"><i class="fas fa-users"></i> 0 Refs</div></div></div><div class="podium-item rank-1"><i class="fas fa-crown crown"></i><img src="https://t.me/i/userpic/320/Krcx-5C8se8OAVxCDTFYpb9A7gGQzPF_NY-w1uwTz1j21LS1pi_q1LbDPJuutnhI.svg" class="podium-img" onerror="this.src='https://via.placeholder.com/100'"><div class="rank-name">Al</div><div class="rank-stats-col"><div class="rank-badge badge-bal">93.96 TK</div><div class="rank-badge badge-ref"><i class="fas fa-users"></i> 0 Refs</div></div></div><div class="podium-item rank-3"><i class="fas fa-crown crown"></i><img src="https://t.me/i/userpic/320/L8TeqJPedB6xOme2MaMgKxNVKJA9CEjqQfKBtp6dbm3YVmd_w1GUuHzlLR_gcRoP.svg" class="podium-img" onerror="this.src='https://via.placeholder.com/100'"><div class="rank-name">❤️</div><div class="rank-stats-col"><div class="rank-badge badge-bal">5.25 TK</div><div class="rank-badge badge-ref"><i class="fas fa-users"></i> 0 Refs</div></div></div></div>
-      <div class="leader-list" id="leader-list-area"><div class="leader-row"><div class="leader-left"><div class="rank-num">#4</div><img src="https://t.me/i/userpic/320/HXpIpW1WRv0j6-9yTBn0ayGjaayrO_ShXrn_b-AReCwCmeXMcZJGTUesoKSUoD49.svg" onerror="this.src='https://via.placeholder.com/100'"><span>md</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.10 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#5</div><img src="https://t.me/i/userpic/320/J8FvXeiqZ5ngYHJaXNsk2jOjUWxXYlaqfkVn5sJD14_F3l__vSJ4lBdcqCZs__PC.svg" onerror="this.src='https://via.placeholder.com/100'"><span>Anik Mahmu</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.10 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#6</div><img src="https://t.me/i/userpic/320/qKNKMwHqKqh1rkcmeAIPoBlwhzky4Cws5CVwkvVAcx6h-j-3gDOSKHwtp_gelnlT.svg" onerror="this.src='https://via.placeholder.com/100'"><span>Sajjad</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.00 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#7</div><img src="https://t.me/i/userpic/320/gCEjPR__VzaRRp7wsE_9DVtilNOMdhMBcs9TpGlTrepOW1w_skgrP5stYwaJzDmQ.svg" onerror="this.src='https://via.placeholder.com/100'"><span>Md Reaid</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.00 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#8</div><img src="https://t.me/i/userpic/320/b2GgtIaCa3SmgcPXtmJQxhZSApTbYOFESv52iaru29VAfFXXTKf__zHIGCy8Hjd4.svg" onerror="this.src='https://via.placeholder.com/100'"><span>Hamza</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.00 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#9</div><img src="https://t.me/i/userpic/320/lU4_Y-V4TqZ_njlx4KnE2QaKR6PaConA1QeomZvvDiH42iEnONNGKJuI26YqCJae.svg" onerror="this.src='https://via.placeholder.com/100'"><span>Yasin</span></div><div class="leader-right-stats"><span class="leader-right-bal">5.00 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div><div class="leader-row"><div class="leader-left"><div class="rank-num">#10</div><img src="https://t.me/i/userpic/320/HbuWR4XQv-o3FzEqUIzaWyHrquXdeFLbQ-ZoztnBEoFry7pZaXfzl-7HYC0oZD-E.svg" onerror="this.src='https://via.placeholder.com/100'"><span>FAHIM 🧿</span></div><div class="leader-right-stats"><span class="leader-right-bal">1.36 TK</span><span class="leader-right-ref"><i class="fas fa-users"></i> 0 Refs</span></div></div></div>
+      <div class="podium-container" id="podium-area"></div>
+      <div class="leader-list" id="leader-list-area"></div>
     </div>
 
     <!-- WITHDRAW -->
     <div id="page-withdraw" class="page-section">
-      <div id="withdraw-content"><div class="premium-card"><div class="lock-overlay">
-          <i class="fas fa-lock"></i><h3>Withdraw Locked</h3><p>Complete the following requirements to unlock withdrawal:</p>
-          <div class="lock-req not-done"><i class="fas fa-times-circle"></i> Refer at least 5 users (0/5)</div>
-          <div class="lock-req not-done"><i class="fas fa-times-circle"></i> Minimum balance 10 TK (0.00 TK)</div>
-        </div></div></div>
+      <div id="withdraw-content"></div>
     </div>
 
     <!-- MY JOB -->
-    <div id="page-myjob" class="page-section active">
+    <div id="page-myjob" class="page-section">
       <div class="premium-card">
         <div class="card-title"><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Post a Job (My Task)</div>
         <p style="font-size:.8rem;color:#888;margin-bottom:15px;">Your balance will be deducted when you post. Admin must approve before it goes live.</p>
@@ -485,19 +511,23 @@
     </div>
   </div>
 <div class="dev-floating-controls">
-      <button onclick="devAddBalance(50)" class="dev-fab btn-bal">
-        <i class="fas fa-plus"></i> 50 TK
-      </button>
-      <button onclick="devAddReferral(1)" class="dev-fab btn-ref">
-        <i class="fas fa-user-plus"></i> 1 Ref
-      </button>
+      <div class="dev-panel">
+        <div class="dev-title">🛠️ Modify Balance</div>
+        <div class="dev-input-group">
+          <input type="number" id="devAmount" value="5" min="0.1" step="0.1" placeholder="Amount">
+        </div>
+        <div class="dev-btn-group">
+          <button onclick="devAdjustBalance('add')" class="dev-btn add"><i class="fas fa-plus"></i> Add</button>
+          <button onclick="devAdjustBalance('sub')" class="dev-btn sub"><i class="fas fa-minus"></i> Sub</button>
+        </div>
+      </div>
     </div>
   <div class="nav">
-    <i class="fas fa-home nav-item" onclick="switchTab('home',this)"></i>
+    <i class="fas fa-home nav-item active" onclick="switchTab('home',this)"></i>
     <i class="fas fa-users nav-item" onclick="switchTab('referral',this)"></i>
     <i class="fas fa-trophy nav-item" onclick="switchTab('leaderboard',this)"></i>
     <i class="fas fa-wallet nav-item" onclick="switchTab('withdraw',this)"></i>
-    <i class="fas fa-briefcase nav-item active" onclick="switchTab('myjob',this)"></i>
+    <i class="fas fa-briefcase nav-item" onclick="switchTab('myjob',this)"></i>
   </div>
 
   <script>
@@ -1093,39 +1123,44 @@
         el.innerHTML=html;
       });
     }
-    // ====== DEV TESTING FUNCTIONS ======
-    
-    // Add Balance directly
-    async function devAddBalance(amount) {
+    // ====== DEV TESTING: CUSTOM BALANCE CONTROLS ======
+    async function devAdjustBalance(action) {
       if (!appState || !appState.user) return toast("User not loaded yet!");
+
+      // Get the amount typed in the input box
+      let amountStr = document.getElementById('devAmount').value;
+      let amount = parseFloat(amountStr);
       
-      let newBal = (appState.user.balance || 0) + amount;
-      let newEarn = (appState.user.totalEarned || 0) + amount;
-      
+      if (isNaN(amount) || amount <= 0) return toast("Please enter a valid amount");
+
+      // Grab current stats
+      let currentBal = appState.user.balance || 0;
+      let currentEarned = appState.user.totalEarned || 0;
+
+      let newBal = currentBal;
+      let newEarned = currentEarned;
+
+      // Apply math based on which button was clicked
+      if (action === 'add') {
+        newBal += amount;
+        newEarned += amount; // Increases "Earned" stat equally
+      } else if (action === 'sub') {
+        newBal -= amount;
+        newEarned -= amount; // Decreases "Earned" stat equally
+      }
+
+      // 🛑 Crucial safeguard: Prevent negative values
+      if (newBal < 0) newBal = 0;
+      if (newEarned < 0) newEarned = 0;
+
       try {
         await db.ref('users/' + appState.user.id).update({
           balance: newBal,
-          totalEarned: newEarn
+          totalEarned: newEarned
         });
-        toast(`🛠️ Added ${amount} TK (Test)`);
+        toast(`🛠️ Balance updated!`);
       } catch (err) {
-        toast("Error adding balance");
-      }
-    }
-
-    // Add Referrals directly
-    async function devAddReferral(count) {
-      if (!appState || !appState.user) return toast("User not loaded yet!");
-      
-      let newRefs = (appState.user.referrals || 0) + count;
-      
-      try {
-        await db.ref('users/' + appState.user.id).update({
-          referrals: newRefs
-        });
-        toast(`🛠️ Added ${count} Referral (Test)`);
-      } catch (err) {
-        toast("Error adding referral");
+        toast("Error updating balance");
       }
     }
   </script>
